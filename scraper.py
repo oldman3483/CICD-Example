@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import json
 import time
+import os
 from datetime import datetime
 
 def crawl_cnyes_usstock():
@@ -18,6 +19,18 @@ def crawl_cnyes_usstock():
         print(f"Starting to crawl: {url}")
         response = requests.get(url, headers=headers, timeout=30)
         response.raise_for_status()
+
+        # Create crawl_html directory if it doesn't exist
+        os.makedirs('crawl_html', exist_ok=True)
+
+        # Save raw HTML content
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        html_filename = f"crawl_html/cnyes_usstock_{timestamp}.html"
+
+        with open(html_filename, 'w', encoding='utf-8') as f:
+            f.write(response.text)
+
+        print(f"HTML content saved to: {html_filename}")
 
         soup = BeautifulSoup(response.content, 'html.parser')
 
@@ -47,12 +60,13 @@ def crawl_cnyes_usstock():
         result = {
             'timestamp': datetime.now().isoformat(),
             'url': url,
+            'html_file': html_filename,
             'total_items': len(stock_data),
             'data': stock_data[:50]  # Limit to first 50 items to avoid huge files
         }
 
         # Save to JSON file
-        output_file = f"cnyes_usstock_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        output_file = f"cnyes_usstock_data_{timestamp}.json"
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(result, f, ensure_ascii=False, indent=2)
 
